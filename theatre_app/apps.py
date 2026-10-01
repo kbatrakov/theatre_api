@@ -3,4 +3,4 @@ from django.apps import AppConfig
 
 class TheatreApiConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'app'
+    name = 'theatre_app'
