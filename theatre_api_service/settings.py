@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'theatre_app.apps.TheatreApiConfig',
     "user",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
