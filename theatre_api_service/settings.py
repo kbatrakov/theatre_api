@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'theatre_app.apps.TheatreApiConfig',
+    'theatre.apps.TheatreApiConfig',
     "user",
     "rest_framework",
 ]

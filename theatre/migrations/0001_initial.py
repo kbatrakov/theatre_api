@@ -66,8 +66,8 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(max_length=128)),
                 ('description', models.TextField(blank=True)),
-                ('actors', models.ManyToManyField(related_name='plays', to='theatre_app.actor')),
-                ('genres', models.ManyToManyField(related_name='plays', to='theatre_app.genre')),
+                ('actors', models.ManyToManyField(related_name='plays', to='theatre.actor')),
+                ('genres', models.ManyToManyField(related_name='plays', to='theatre.genre')),
             ],
             options={
                 'ordering': ['title'],
@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('show_time', models.DateTimeField()),
-                ('play', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='performances', to='theatre_app.play')),
+                ('play', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='performances', to='theatre.play')),
             ],
             options={
                 'ordering': ['-show_time'],

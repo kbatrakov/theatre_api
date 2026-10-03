@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('theatre_app', '0001_initial'),
+        ('theatre', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -23,17 +23,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='performance',
             name='theatre_hall',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='performances', to='theatre_app.theatrehall'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='performances', to='theatre.theatrehall'),
         ),
         migrations.AddField(
             model_name='ticket',
             name='performance',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to='theatre_app.performance'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to='theatre.performance'),
         ),
         migrations.AddField(
             model_name='ticket',
             name='reservation',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to='theatre_app.reservation'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to='theatre.reservation'),
         ),
         migrations.AlterUniqueTogether(
             name='ticket',
