@@ -1,7 +1,7 @@
 from django.contrib.auth.urls import path
 from django.urls import include
 from rest_framework.routers import DefaultRouter
-from theatre_app.views import ActorViewSet, GenresViewSet, PlayViewSet, TheatreHallViewSet, PerformanceViewSet, \
+from theatre.views import ActorViewSet, GenresViewSet, PlayViewSet, TheatreHallViewSet, PerformanceViewSet, \
     ReservationViewSet, TicketViewSet
 
 
@@ -18,4 +18,4 @@ urlpatterns = [
     path("", include(router.urls))
 ]
 
-app_name = "theatre_app"
+app_name = "theatre"
