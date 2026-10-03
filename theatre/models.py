@@ -46,6 +46,11 @@ class TheatreHall(models.Model):
         return self.name
 
 
+    @property
+    def capacity(self):
+        return self.rows * self.seats_in_row
+
+
 class Performance(models.Model):
     play = models.ForeignKey(Play, on_delete=models.CASCADE, related_name="performances", blank=False)
     theatre_hall = models.ForeignKey(TheatreHall, on_delete=models.CASCADE, related_name="performances", blank=False)

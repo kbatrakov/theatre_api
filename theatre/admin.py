@@ -1,5 +1,5 @@
 from django.contrib import admin
-from theatre_app.models import (
+from theatre.models import (
     Play, Performance, TheatreHall,
     Actor, Genre, Ticket, Reservation
     )
