@@ -1,0 +1,97 @@
+[
+  {
+    "model": "theatre.actor",
+    "pk": 1,
+    "fields": {
+      "first_name": "John",
+      "last_name": "Doe"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 2,
+    "fields": {
+      "first_name": "Anna",
+      "last_name": "Smith"
+    }
+  },
+  {
+    "model": "theatre.genre",
+    "pk": 1,
+    "fields": {
+      "name": "Drama"
+    }
+  },
+  {
+    "model": "theatre.genre",
+    "pk": 2,
+    "fields": {
+      "name": "Comedy"
+    }
+  },
+  {
+    "model": "theatre.play",
+    "pk": 1,
+    "fields": {
+      "title": "Hamlet",
+      "description": "A tragedy by Shakespeare",
+      "actors": [1, 2],
+      "genres": [1]
+    }
+  },
+  {
+    "model": "theatre.theatrehall",
+    "pk": 1,
+    "fields": {
+      "name": "Main Hall",
+      "rows": 5,
+      "seats_in_row": 10
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 1,
+    "fields": {
+      "play": 1,
+      "theatre_hall": 1,
+      "show_time": "2026-10-01T19:00:00Z"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 1,
+    "fields": {
+      "email": "test@example.com",
+      "password": "pbkdf2_sha256$260000$test$testhash",
+      "is_active": true
+    }
+  },
+  {
+    "model": "theatre.reservation",
+    "pk": 1,
+    "fields": {
+      "created_at": "2026-10-01T12:00:00Z",
+      "user": 1
+    }
+  },
+  {
+    "model": "theatre.ticket",
+    "pk": 1,
+    "fields": {
+      "row": 1,
+      "seat": 1,
+      "performance": 1,
+      "reservation": 1
+    }
+  },
+  {
+    "model": "theatre.ticket",
+    "pk": 2,
+    "fields": {
+      "row": 1,
+      "seat": 2,
+      "performance": 1,
+      "reservation": 1
+    }
+  }
+]
