@@ -4,6 +4,7 @@ from django.db.models.aggregates import Count
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 from theatre.models import Actor, Genre, Play, TheatreHall, Performance, Reservation
+from theatre.permissions import IsAdminOrReadOnly
 from theatre.serializers import (ActorSerializer, GenreSerializer, PlaySerializer, TheatreHallSerializer, \
     PerformanceSerializer, ReservationSerializer, PlayListSerializer, PlayDetailSerializer, \
     PerformanceListSerializer, PerformanceDetailSerializer, ReservationListSerializer, ReservationDetailSerializer)
@@ -12,16 +13,19 @@ from theatre.serializers import (ActorSerializer, GenreSerializer, PlaySerialize
 class ActorViewSet(viewsets.ModelViewSet):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class GenresViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class PlayViewSet(viewsets.ModelViewSet):
     queryset = Play.objects.all().prefetch_related("actors", "genres")
     serializer_class = PlaySerializer
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -59,6 +63,7 @@ class PlayViewSet(viewsets.ModelViewSet):
 class TheatreHallViewSet(viewsets.ModelViewSet):
     queryset = TheatreHall.objects.all()
     serializer_class = TheatreHallSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         return TheatreHall.objects.all().annotate(
@@ -68,6 +73,7 @@ class TheatreHallViewSet(viewsets.ModelViewSet):
 class PerformanceViewSet(viewsets.ModelViewSet):
     queryset = Performance.objects.all().select_related("play", "theatre_hall")
     serializer_class = PerformanceSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         queryset = self.queryset.annotate(
@@ -109,6 +115,7 @@ class PerformanceViewSet(viewsets.ModelViewSet):
 class ReservationViewSet(viewsets.ModelViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(user=self.request.user)
