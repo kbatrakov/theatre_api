@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from debug_toolbar.toolbar import debug_toolbar_urls
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/theatre/", include("theatre.urls", namespace="theatre")),
-]
+] + debug_toolbar_urls()
