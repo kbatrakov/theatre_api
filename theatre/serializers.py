@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
-
+from django.db import transaction
+from rest_framework.exceptions import ValidationError
 from theatre.models import (
     Play, Performance, TheatreHall,
     Actor, Genre, Ticket, Reservation
@@ -126,27 +127,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
         ]
 
 
-class ReservationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Reservation
-        fields = [
-            "id",
-            "created_at",
-            "user"
-        ]
-
-
-class ReservationListSerializer(ReservationSerializer):
-    reserved_by = serializers.CharField(source="user.full_name")
-    class Meta:
-        model = Reservation
-        fields = [
-            "id",
-            "created_at",
-            "reserved_by"
-        ]
-
-
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
@@ -154,14 +134,21 @@ class TicketSerializer(serializers.ModelSerializer):
             "id",
             "row",
             "seat",
-            "performance",
-            "reservation"
+            "performance"
         ]
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        hall = attrs["performance"].theatre_hall
+        if not 1 <= attrs["row"] <= hall.rows:
+            raise ValidationError({"row": f"row must be in range 1..{hall.rows}"})
+        if not 1 <= attrs["seat"] <= hall.seats_in_row:
+            raise ValidationError({"seat": f"seat must be in range 1..{hall.seats_in_row}"})
+        return data
 
 
 class TicketListSerializer(serializers.ModelSerializer):
     performance = PerformanceListSerializer(read_only=True)
-    reservation = ReservationListSerializer(read_only=True)
 
     class Meta:
         model = Ticket
@@ -169,9 +156,47 @@ class TicketListSerializer(serializers.ModelSerializer):
             "id",
             "row",
             "seat",
-            "performance",
-            "reservation"
+            "performance"
         ]
+
+
+class ReservationSerializer(serializers.ModelSerializer):
+    tickets = TicketSerializer(many=True, allow_empty=False)
+    class Meta:
+        model = Reservation
+        fields = [
+            "id",
+            "created_at",
+            "tickets"
+        ]
+        read_only_fields = ["created_at"]
+
+    def validate_tickets(self, tickets):
+        seen = set()
+        for t in tickets:
+            key = (t["performance"].id, t["row"], t["seat"])
+            if key in seen:
+                raise ValidationError("Duplicate seats in one reservation")
+            seen.add(key)
+        return tickets
+
+    def create(self, validated_data):
+        tickets_data = validated_data.pop("tickets")
+        with transaction.atomic():
+            reservation = Reservation.objects.create(**validated_data)
+            Ticket.objects.bulk_create(
+                [Ticket(reservation=reservation, **t) for t in tickets_data]
+            )
+        return reservation
+
+
+class ReservationListSerializer(serializers.ModelSerializer):
+    reserved_by = serializers.CharField(source="user.full_name", read_only=True)
+    tickets_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Reservation
+        fields = ["id", "created_at", "reserved_by", "tickets_count"]
 
 
 class ReservationDetailSerializer(serializers.ModelSerializer):
@@ -180,24 +205,4 @@ class ReservationDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Reservation
-        fields = [
-            "id",
-            "created_at",
-            "reserved_by_user",
-            "tickets"
-        ]
-
-
-class TicketDetailSerializer(serializers.ModelSerializer):
-    performance = PerformanceDetailSerializer(read_only=True)
-    reservation = ReservationListSerializer(read_only=True)
-
-    class Meta:
-        model = Ticket
-        fields = [
-            "id",
-            "row",
-            "seat",
-            "performance",
-            "reservation"
-        ]
+        fields = ["id", "created_at", "reserved_by_user", "tickets"]
