@@ -3,6 +3,7 @@ from django.db.models import F
 from django.db.models.aggregates import Count
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from theatre.models import Actor, Genre, Play, TheatreHall, Performance, Reservation
 from theatre.permissions import IsAdminOrReadOnly
 from theatre.serializers import (ActorSerializer, GenreSerializer, PlaySerializer, TheatreHallSerializer, \
@@ -66,7 +67,8 @@ class TheatreHallViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
-        return TheatreHall.objects.all().annotate(
+        queryset = self.queryset
+        return queryset.annotate(
         hall_capacity=F("rows") * F("seats_in_row"))
 
 
@@ -112,13 +114,19 @@ class PerformanceViewSet(viewsets.ModelViewSet):
         return PerformanceSerializer
 
 
+class ReservationPagination(PageNumberPagination):
+    page_size = 10
+    max_page_size = 100
+
+
 class ReservationViewSet(viewsets.ModelViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     permission_classes = [IsAdminOrReadOnly]
+    pagination_class = ReservationPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset().filter(user=self.request.user)
+        queryset = self.queryset.filter(user=self.request.user)
 
         if self.action == "list":
             return queryset.select_related("user").annotate(
@@ -129,6 +137,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 "tickets__performance__play",
                 "tickets__performance__theatre_hall",
             )
+
         return queryset
 
     def get_serializer_class(self):
