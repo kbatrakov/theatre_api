@@ -1,5 +1,43 @@
-.venv
-.idea
-**__pycache__
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Django
 db.sqlite3
+db.sqlite3-journal
 media/
+staticfiles/
+*.log
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+local_settings.py
+
+# Generated OpenAPI schema
+schema.yml
+
+# Tests and coverage
+.coverage
+htmlcov/
+
+# OS files
+.DS_Store
+Thumbs.db

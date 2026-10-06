@@ -1,9 +1,13 @@
 from datetime import datetime
 from django.db.models import F
 from django.db.models.aggregates import Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+
 from theatre.models import Actor, Genre, Play, TheatreHall, Performance, Reservation
 from theatre.permissions import IsAdminOrReadOnly
 from theatre.serializers import (ActorSerializer, GenreSerializer, PlaySerializer, TheatreHallSerializer, \
@@ -23,6 +27,26 @@ class GenresViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter("title", OpenApiTypes.STR,
+                                    description="Filtering plays by 'title' parameter (case insensitive)"),
+            OpenApiParameter(
+                       "actors",
+                             type={"type": "array", "items": {"type": "integer"}},
+                             explode=False,
+                             description="Actors IDs split by a comma: 1, 2, 3 etc,",
+                             ),
+            OpenApiParameter(
+                       "genres",
+                             type={"type": "array", "items": {"type": "integer"}},
+                             explode=False,
+                             description="Genres IDs split by a comma: 1, 2, 3 etc.",
+            ),
+        ]
+    )
+)
 class PlayViewSet(viewsets.ModelViewSet):
     queryset = Play.objects.all().prefetch_related("actors", "genres")
     serializer_class = PlaySerializer
@@ -72,6 +96,18 @@ class TheatreHallViewSet(viewsets.ModelViewSet):
         hall_capacity=F("rows") * F("seats_in_row"))
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter("play_title", OpenApiTypes.STR,
+                             description="Filtering by play title."),
+            OpenApiParameter("theatre_hall_name", OpenApiTypes.STR,
+                             description="Filtering by name of a theatre hall."),
+            OpenApiParameter("date", OpenApiTypes.DATE,
+                             description="Show date, format YYYY-MM-DD"),
+        ]
+    )
+)
 class PerformanceViewSet(viewsets.ModelViewSet):
     queryset = Performance.objects.all().select_related("play", "theatre_hall")
     serializer_class = PerformanceSerializer
@@ -122,7 +158,7 @@ class ReservationPagination(PageNumberPagination):
 class ReservationViewSet(viewsets.ModelViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAuthenticated]
     pagination_class = ReservationPagination
 
     def get_queryset(self):
