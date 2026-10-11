@@ -106,7 +106,7 @@ class PerformanceDetailSerializer(PerformanceSerializer):
 class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ["id", "full_name", "email"]
+        fields = ["id", "email"]
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -162,7 +162,7 @@ class ReservationSerializer(serializers.ModelSerializer):
 
 
 class ReservationListSerializer(serializers.ModelSerializer):
-    reserved_by = serializers.CharField(source="user.full_name", read_only=True)
+    reserved_by = serializers.CharField(source="user.get_full_name", read_only=True)
     tickets_count = serializers.IntegerField(read_only=True)
 
     class Meta:

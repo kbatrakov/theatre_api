@@ -29,7 +29,6 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
-    full_name = models.CharField(max_length=150, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -37,4 +36,5 @@ class User(AbstractUser):
     objects = UserManager()
 
     def get_full_name(self):
-        return self.full_name
+        full_name = f"{self.first_name} {self.last_name}".strip()
+        return full_name or self.email
