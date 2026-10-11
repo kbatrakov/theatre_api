@@ -7,13 +7,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('theatre', '0003_alter_reservation_user'),
+        ("theatre", "0003_alter_reservation_user"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='play',
-            name='image',
-            field=models.ImageField(null=True, upload_to=theatre.models.play_image_file_path),
+            model_name="play",
+            name="image",
+            field=models.ImageField(
+                null=True, upload_to=theatre.models.play_image_file_path
+            ),
         ),
     ]

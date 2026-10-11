@@ -10,9 +10,20 @@ from rest_framework.permissions import IsAuthenticated
 
 from theatre.models import Actor, Genre, Play, TheatreHall, Performance, Reservation
 from theatre.permissions import IsAdminOrReadOnly
-from theatre.serializers import (ActorSerializer, GenreSerializer, PlaySerializer, TheatreHallSerializer, \
-    PerformanceSerializer, ReservationSerializer, PlayListSerializer, PlayDetailSerializer, \
-    PerformanceListSerializer, PerformanceDetailSerializer, ReservationListSerializer, ReservationDetailSerializer)
+from theatre.serializers import (
+    ActorSerializer,
+    GenreSerializer,
+    PlaySerializer,
+    TheatreHallSerializer,
+    PerformanceSerializer,
+    ReservationSerializer,
+    PlayListSerializer,
+    PlayDetailSerializer,
+    PerformanceListSerializer,
+    PerformanceDetailSerializer,
+    ReservationListSerializer,
+    ReservationDetailSerializer,
+)
 
 
 class ActorViewSet(viewsets.ModelViewSet):
@@ -30,19 +41,22 @@ class GenresViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     list=extend_schema(
         parameters=[
-            OpenApiParameter("title", OpenApiTypes.STR,
-                                    description="Filtering plays by 'title' parameter (case insensitive)"),
             OpenApiParameter(
-                       "actors",
-                             type={"type": "array", "items": {"type": "integer"}},
-                             explode=False,
-                             description="Actors IDs split by a comma: 1, 2, 3 etc,",
-                             ),
+                "title",
+                OpenApiTypes.STR,
+                description="Filtering plays by 'title' parameter (case insensitive)",
+            ),
             OpenApiParameter(
-                       "genres",
-                             type={"type": "array", "items": {"type": "integer"}},
-                             explode=False,
-                             description="Genres IDs split by a comma: 1, 2, 3 etc.",
+                "actors",
+                type={"type": "array", "items": {"type": "integer"}},
+                explode=False,
+                description="Actors IDs split by a comma: 1, 2, 3 etc,",
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "array", "items": {"type": "integer"}},
+                explode=False,
+                description="Genres IDs split by a comma: 1, 2, 3 etc.",
             ),
         ]
     )
@@ -92,19 +106,23 @@ class TheatreHallViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = self.queryset
-        return queryset.annotate(
-        hall_capacity=F("rows") * F("seats_in_row"))
+        return queryset.annotate(hall_capacity=F("rows") * F("seats_in_row"))
 
 
 @extend_schema_view(
     list=extend_schema(
         parameters=[
-            OpenApiParameter("play_title", OpenApiTypes.STR,
-                             description="Filtering by play title."),
-            OpenApiParameter("theatre_hall_name", OpenApiTypes.STR,
-                             description="Filtering by name of a theatre hall."),
-            OpenApiParameter("date", OpenApiTypes.DATE,
-                             description="Show date, format YYYY-MM-DD"),
+            OpenApiParameter(
+                "play_title", OpenApiTypes.STR, description="Filtering by play title."
+            ),
+            OpenApiParameter(
+                "theatre_hall_name",
+                OpenApiTypes.STR,
+                description="Filtering by name of a theatre hall.",
+            ),
+            OpenApiParameter(
+                "date", OpenApiTypes.DATE, description="Show date, format YYYY-MM-DD"
+            ),
         ]
     )
 )
@@ -118,8 +136,9 @@ class PerformanceViewSet(viewsets.ModelViewSet):
             hall_capacity=F("theatre_hall__rows") * F("theatre_hall__seats_in_row"),
             occupied_seats_count=Count("tickets"),
             available_seats_count=(
-                    F("theatre_hall__rows") * F("theatre_hall__seats_in_row") - Count("tickets")
-            )
+                F("theatre_hall__rows") * F("theatre_hall__seats_in_row")
+                - Count("tickets")
+            ),
         )
 
         play_title = self.request.query_params.get("play_title")
@@ -140,7 +159,6 @@ class PerformanceViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(show_time__date=date)
 
         return queryset
-
 
     def get_serializer_class(self):
         if self.action == "list":

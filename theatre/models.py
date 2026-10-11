@@ -56,15 +56,18 @@ class TheatreHall(models.Model):
     def __str__(self):
         return self.name
 
-
     @property
     def capacity(self):
         return self.rows * self.seats_in_row
 
 
 class Performance(models.Model):
-    play = models.ForeignKey(Play, on_delete=models.CASCADE, related_name="performances", blank=False)
-    theatre_hall = models.ForeignKey(TheatreHall, on_delete=models.CASCADE, related_name="performances", blank=False)
+    play = models.ForeignKey(
+        Play, on_delete=models.CASCADE, related_name="performances", blank=False
+    )
+    theatre_hall = models.ForeignKey(
+        TheatreHall, on_delete=models.CASCADE, related_name="performances", blank=False
+    )
     show_time = models.DateTimeField()
 
     class Meta:
@@ -76,9 +79,9 @@ class Performance(models.Model):
 
 class Reservation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE,
-                             related_name="reservations")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reservations"
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -90,8 +93,12 @@ class Reservation(models.Model):
 class Ticket(models.Model):
     row = models.PositiveIntegerField()
     seat = models.PositiveIntegerField()
-    performance = models.ForeignKey(Performance, on_delete=models.CASCADE, related_name="tickets", blank=False)
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name="tickets", blank=False)
+    performance = models.ForeignKey(
+        Performance, on_delete=models.CASCADE, related_name="tickets", blank=False
+    )
+    reservation = models.ForeignKey(
+        Reservation, on_delete=models.CASCADE, related_name="tickets", blank=False
+    )
 
     class Meta:
         unique_together = ["row", "seat", "performance"]
