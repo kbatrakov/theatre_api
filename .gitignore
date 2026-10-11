@@ -28,7 +28,7 @@ staticfiles/
 # Secrets and local settings
 .env
 .env.*
-!.env.example
+!.env.sample
 local_settings.py
 
 # Generated OpenAPI schema
