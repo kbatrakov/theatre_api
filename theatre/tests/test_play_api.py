@@ -7,6 +7,7 @@ from theatre.models import Actor, Play, Genre
 from theatre.serializers import PlayListSerializer, PlayDetailSerializer
 
 PLAY_LIST_URL = reverse("theatre:play-list")
+PERFORMANCE_LIST_URL = reverse("theatre:performance-list")
 
 
 def detail_url(play_id):
@@ -184,6 +185,28 @@ class PlayFilterTest(TestCase):
         self.assertIn(serializer_1.data, response.data)
         self.assertNotIn(serializer_2.data, response.data)
         self.assertNotIn(serializer_3.data, response.data)
+
+    def test_actors_filter_non_numeric_does_not_crash(self):
+        response = self.client.get(PLAY_LIST_URL, {"actors": "abc"})
+
+        self.assertLess(response.status_code, 500)
+
+    def test_genres_filter_partially_invalid_does_not_crash(self):
+        response = self.client.get(PLAY_LIST_URL, {"genres": "1,x"})
+
+        self.assertLess(response.status_code, 500)
+
+    def test_actors_filter_nonexistent_id_returns_empty_list(self):
+        sample_play()
+        response = self.client.get(PLAY_LIST_URL, {"actors": 99999})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+    def test_performance_filter_invalid_date_does_not_crash(self):
+        response = self.client.get(PERFORMANCE_LIST_URL, {"date": "not-a-date"})
+
+        self.assertLess(response.status_code, 500)
 
 
 class PlayModifyByUserTest(TestCase):

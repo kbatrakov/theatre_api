@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import transaction, IntegrityError
+from django.db.models import Count, Q
 from rest_framework.exceptions import ValidationError
 from theatre.models import (
     Play,
@@ -11,6 +12,9 @@ from theatre.models import (
     Reservation,
 )
 from rest_framework import serializers
+
+
+SEATS_TAKEN_MESSAGE = "One or more selected seats are already taken."
 
 
 class ActorSerializer(serializers.ModelSerializer):
@@ -59,6 +63,19 @@ class PerformanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Performance
         fields = ["id", "play", "theatre_hall", "show_time"]
+
+    def validate(self, attrs):
+        instance = Performance(**attrs)
+
+        try:
+            instance.clean()
+        except ValidationError as e:
+            if hasattr(e, "message_dict"):
+                raise serializers.ValidationError(e.message_dict)
+
+            raise serializers.ValidationError({"non_field_errors": e.messages})
+
+        return attrs
 
 
 class PerformanceListSerializer(PerformanceSerializer):
@@ -142,22 +159,75 @@ class ReservationSerializer(serializers.ModelSerializer):
         fields = ["id", "created_at", "tickets"]
         read_only_fields = ["created_at"]
 
-    def validate_tickets(self, tickets):
-        seen = set()
-        for t in tickets:
-            key = (t["performance"].id, t["row"], t["seat"])
-            if key in seen:
-                raise ValidationError("Duplicate seats in one reservation")
-            seen.add(key)
-        return tickets
+    @staticmethod
+    def _validate_availability(tickets_data, performances):
+        requested = [
+            (ticket["performance"].id, ticket["row"], ticket["seat"])
+            for ticket in tickets_data
+        ]
+        if len(requested) != len(set(requested)):
+            raise serializers.ValidationError(
+                {"tickets": "Duplicated seats in the request."}
+            )
+
+        sold_count = dict(
+            Ticket.objects.filter(performance_id__in=performances.keys())
+            .order_by()
+            .values("performance_id")
+            .annotate(total=Count("id"))
+            .values_list("performance_id", "total")
+
+        )
+
+        for perf_id, performance in performances.items():
+            if sold_count.get(perf_id, 0) >= performance.theatre_hall.capacity:
+                raise serializers.ValidationError(
+                    {"tickets": f"Performance {perf_id} is fully booked."}
+                )
+
+        query = Q()
+        for perf_id, row, seat in requested:
+            query |= Q(performance_id=perf_id, row=row, seat=seat)
+
+        unavailable = list(
+            Ticket.objects.filter(query)
+            .order_by("performance_id", "row", "seat")
+            .values_list("performance_id", "row", "seat")
+        )
+
+        if unavailable:
+            seats = ", ".join(
+                f"row {row}, seat {seat} (performance {perf})"
+                for perf, row, seat in unavailable
+            )
+
+            raise serializers.ValidationError(
+                {"tickets": f"Seats already taken: {seats}."}
+            )
 
     def create(self, validated_data):
         tickets_data = validated_data.pop("tickets")
-        with transaction.atomic():
-            reservation = Reservation.objects.create(**validated_data)
-            Ticket.objects.bulk_create(
-                [Ticket(reservation=reservation, **t) for t in tickets_data]
-            )
+        performance_ids = sorted({ticket["performance"].id for ticket in tickets_data})
+
+        try:
+            with transaction.atomic():
+                performances = {
+                    p.id: p
+                    for p in Performance.objects.select_for_update(of=("self", ))
+                    .select_related("theatre_hall")
+                    .filter(id__in=performance_ids)
+                    .order_by("id")
+                }
+                self._validate_availability(tickets_data, performances=performances)
+
+                reservation = Reservation.objects.create(**validated_data)
+                Ticket.objects.bulk_create(
+                    [Ticket(reservation=reservation, **ticket)
+                     for ticket in tickets_data]
+                )
+        except IntegrityError:
+            raise serializers.ValidationError({"tickets": SEATS_TAKEN_MESSAGE})
+
         return reservation
 
 

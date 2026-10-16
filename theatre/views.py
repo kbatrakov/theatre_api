@@ -3,7 +3,7 @@ from django.db.models import F
 from django.db.models.aggregates import Count
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -75,8 +75,14 @@ class PlayViewSet(viewsets.ModelViewSet):
             return PlaySerializer
 
     @staticmethod
-    def params_to_ints(qs):
-        return [int(element) for element in qs.split(",")]
+    def params_to_ints(qs, param_name):
+        try:
+            return [int(element) for element in qs.split(",")]
+        except ValueError:
+            raise ValidationError(
+                {param_name: "Must be a comma-separated list of integers, "
+                             "e.g. 1,2,3."}
+            )
 
     def get_queryset(self):
         queryset = self.queryset
@@ -89,14 +95,14 @@ class PlayViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(title__icontains=title)
 
         if actors:
-            actors_ids = self.params_to_ints(actors)
+            actors_ids = self.params_to_ints(actors, "actors")
             queryset = queryset.filter(actors__id__in=actors_ids)
 
         if genres:
-            genres_ids = self.params_to_ints(genres)
+            genres_ids = self.params_to_ints(genres, "genres")
             queryset = queryset.filter(genres__id__in=genres_ids)
 
-        return queryset
+        return queryset.distinct()
 
 
 class TheatreHallViewSet(viewsets.ModelViewSet):
@@ -173,7 +179,11 @@ class ReservationPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class ReservationViewSet(viewsets.ModelViewSet):
+class ReservationViewSet(mixins.ListModelMixin,
+                         mixins.RetrieveModelMixin,
+                         mixins.CreateModelMixin,
+                         mixins.DestroyModelMixin,
+                         viewsets.GenericViewSet):
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     permission_classes = [IsAuthenticated]
@@ -183,9 +193,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
         queryset = self.queryset.filter(user=self.request.user)
 
         if self.action == "list":
-            return queryset.select_related("user").annotate(
-                tickets_count=Count("tickets")
-            )
+            return (queryset.select_related("user")
+                    .annotate(tickets_count=Count("tickets"))
+                    .order_by("-created_at")
+                    )
+
         if self.action == "retrieve":
             return queryset.select_related("user").prefetch_related(
                 "tickets__performance__play",

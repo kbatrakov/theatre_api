@@ -1,8 +1,14 @@
 import os.path
 import uuid
+from datetime import timedelta
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.text import slugify
+from django.core.exceptions import ValidationError
 from theatre_api_service import settings
+
+
+PERFORMANCE_DURATION = timedelta(hours=2)
 
 
 class Actor(models.Model):
@@ -47,11 +53,21 @@ class Play(models.Model):
 
 class TheatreHall(models.Model):
     name = models.CharField(max_length=128, blank=False)
-    rows = models.PositiveIntegerField()
-    seats_in_row = models.PositiveIntegerField()
+    rows = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    seats_in_row = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     class Meta:
         ordering = ["name"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(rows__gte=1),
+                name="theatre_hall_rows_gte_1",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(seats_in_row__gte=1),
+                name="theatre_hall_seats_in_row_gte_1",
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -75,6 +91,19 @@ class Performance(models.Model):
 
     def __str__(self):
         return f"{self.play.title} - {self.show_time}"
+
+    def clean(self):
+        overlapping = Performance.objects.filter(
+            theatre_hall=self.theatre_hall,
+            show_time__gt=self.show_time - PERFORMANCE_DURATION,
+            show_time__lt=self.show_time + PERFORMANCE_DURATION,
+         ).exclude(pk=self.pk)
+
+        if overlapping.exists():
+            raise ValidationError(
+                {"show_time": "This theatre hall already has a performance "
+                              "scheduled at this time."}
+            )
 
 
 class Reservation(models.Model):
